@@ -24,6 +24,22 @@ dt = datetime.now().strftime("%b %d, %Y @ %I:%M %p")
 print("dt == ", dt)
 
 
+def login(driver):
+
+    try:
+        print(loginUrl)
+        driver.get(loginUrl)
+    
+        elem = driver.find_element_by_xpath('//*[@id="login-username"]')
+        elem.clear()
+        elem.send_keys(username)
+        return driver
+
+    except Exception as e:
+        print(str(e))
+        # pass
+
+login(driver)
 # close and quit driver
 driver.close()
 driver.quit()
