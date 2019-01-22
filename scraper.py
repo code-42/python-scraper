@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -20,11 +21,10 @@ watchlistUrl = os.environ.get('YAHOO_WATCHLIST_URL')
 # current date and time
 timeStamp = datetime.now().timestamp()
 print("timestamp == ", timeStamp)
-# timestamp = datetime.timestamp(now)
 dt = datetime.now().strftime("%b %d, %Y @ %I:%M %p")
 print("dt == ", dt)
 
-
+# login to get handle on driver
 def login(driver):
 
     try:
@@ -45,6 +45,16 @@ def login(driver):
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="login-signin"]')))
         elem = driver.find_element_by_xpath('//*[@id="login-signin"]').click()
        
+        print(watchlistUrl)
+        # elem = wait.until(EC.title_contains(driver.title))
+        # print(driver.title)
+        driver.get(watchlistUrl)
+
+        elem = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/dialog/section/button')))
+        if(elem):
+            print(elem)
+            driver.find_element_by_xpath('/html/body/dialog/section/button').click()
+
         return driver
 
     except Exception as e:
