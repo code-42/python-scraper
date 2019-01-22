@@ -63,7 +63,21 @@ def login(driver):
     except TimeoutException:
         pass
 
+
+def getPageHtml(driver):
+    # open connection and grab the page
+    elem = driver.find_element_by_xpath("//*")
+    page_html = elem.get_attribute("outerHTML")
+    try:
+        filename = "watchlist.html"
+        f = open(filename, 'w', encoding='utf-8')
+        f.write(page_html)
+    finally:
+        f.close()
+
+
 login(driver)
+getPageHtml(driver)
 # close and quit driver
 driver.close()
 driver.quit()
