@@ -9,6 +9,7 @@ from selenium.webdriver.common.keys import Keys
 from datetime import datetime
 import time
 import os
+from bs4 import BeautifulSoup
 
 driver = webdriver.Firefox()
 wait = WebDriverWait(driver, 10) # seconds
@@ -76,8 +77,31 @@ def getPageHtml(driver):
         f.close()
 
 
-login(driver)
-getPageHtml(driver)
+def scrapeTotals():
+    keys = ['Market Time','Total Value','Day Gain','Total Gain'] 
+    values = [] # ['$27,419.10', 'Day Gain-23.40 (-0.09%)', 'Total Gain+13,245.40 (+93.45%)']
+    totalValues = {}
+    try:
+        # first item in list is market time
+        values.append(dt)
+        filename = "watchlist.html"
+        with open(filename, 'r', encoding='utf-8') as f:
+            contents = f.read()
+            soup = BeautifulSoup(contents, 'lxml')
+            totals = soup.find_all('div', {'class': 'Mb(10px)'})
+            for total in totals[1]:
+                values.append(total.text)
+    finally:
+        f.close()
+        for key, value in zip(keys, values):
+            totalValues[key] = value
+        print(totalValues)
+
+
+# login(driver)
+# getPageHtml(driver)
+scrapeTotals()
+
 # close and quit driver
 driver.close()
 driver.quit()
