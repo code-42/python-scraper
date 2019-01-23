@@ -98,9 +98,54 @@ def scrape_totals():
         print(totalValues)
 
 
+def scrape_watchlist():
+    keys = ['symbol',
+            'lastPrice',
+            'todaysChange',
+            'percentChange',
+            'currency',
+            'marketTime',
+            'volume',
+            'shares',
+            'avgVol',
+            'dayRange',
+            'fiftyTwoWkRange',
+            'dayChart',
+            'marketCap'
+            ]
+    values = []
+    watchlist_item = {}
+    watchlist = []
+
+    filename = "watchlist.html"
+    with open(filename, 'r', encoding='utf-8') as f:
+        contents = f.read()
+        soup = BeautifulSoup(contents, 'lxml')
+        table = soup.table
+        try:
+            tr = table.find_all('tr')
+            for tr in table.find_all('tr'):
+                td = tr.find_all('td')
+                if len(td) > 0:
+                    values = []
+                    for i in range(len(td)):
+                        values.append(td[i].text)
+                        
+                    for key, value in zip(keys, values):
+                        watchlist_item[key] = value
+
+                    watchlist.append(watchlist_item.copy())
+                    
+        finally:
+            f.close()
+            print(watchlist)
+
+
+
 # login(driver)
 # get_page_html(driver)
 scrape_totals()
+scrape_watchlist()
 
 # close and quit driver
 driver.close()
