@@ -65,7 +65,7 @@ def login(driver):
         pass
 
 
-def getPageHtml(driver):
+def get_page_html(driver):
     # open connection and grab the page
     elem = driver.find_element_by_xpath("//*")
     page_html = elem.get_attribute("outerHTML")
@@ -77,7 +77,7 @@ def getPageHtml(driver):
         f.close()
 
 
-def scrapeTotals():
+def scrape_totals():
     keys = ['Market Time','Total Value','Day Gain','Total Gain'] 
     values = [] # ['$27,419.10', 'Day Gain-23.40 (-0.09%)', 'Total Gain+13,245.40 (+93.45%)']
     totalValues = {}
@@ -99,8 +99,8 @@ def scrapeTotals():
 
 
 # login(driver)
-# getPageHtml(driver)
-scrapeTotals()
+# get_page_html(driver)
+scrape_totals()
 
 # close and quit driver
 driver.close()
