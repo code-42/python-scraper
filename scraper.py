@@ -7,9 +7,10 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
+from bs4 import BeautifulSoup
 import time
 import os
-from bs4 import BeautifulSoup
+import re
 
 driver = webdriver.Firefox()
 wait = WebDriverWait(driver, 10) # seconds
@@ -79,7 +80,7 @@ def get_page_html(driver):
 
 def scrape_totals():
     keys = ['Market Time','Total Value','Day Gain','Total Gain'] 
-    values = [] # ['$27,419.10', 'Day Gain-23.40 (-0.09%)', 'Total Gain+13,245.40 (+93.45%)']
+    values = []
     totalValues = {}
     try:
         # first item in list is market time
@@ -88,9 +89,21 @@ def scrape_totals():
         with open(filename, 'r', encoding='utf-8') as f:
             contents = f.read()
             soup = BeautifulSoup(contents, 'lxml')
+            
             totals = soup.find_all('div', {'class': 'Mb(10px)'})
+#             totals = soup.find('div.Mb(10px)')
             for total in totals[1]:
-                values.append(total.text)
+                # pattern0 captures the Total Value
+                pattern0 = re.search("[$](\d+[,?]\d+\.\d+)", total.text)
+                if pattern0: values.append(pattern0.group())
+                
+                # pattern1 captures the Day Gain
+                pattern1 = re.search("([+|-]\d+\.\d+\s\([+|-]\d+\.\d+\%\))", total.text)
+                if pattern1: values.append(pattern1.group())
+                
+                # pattern2 captures the Total Gain
+                pattern2 = re.search("([+|-]\d+\,\d+\.\d+\s[\(][+]\d+.\d+\%\))", total.text)
+                if pattern2: values.append(pattern2.group())
     finally:
         f.close()
         for key, value in zip(keys, values):
