@@ -202,20 +202,32 @@ def scrape_watchlist():
         return watchlist
 
 
-def write_mongo(total_values, watchlist_list):
+def write_mongo(total_values_list, watchlist_list):
     client = MongoClient(mongo_uri)
     mdb = client[mongo_dbname]
+    
     totals = mdb.totals
-    result = totals.insert_one(total_values)
-    if result:
-        print(str(result.inserted_id))
+    try:
+        result = totals.insert_one(total_values_list)
+        if result:
+            print(str(result.inserted_id))
+    except Exception as e:
+        # print(str(e))
+        pass
+    except TimeoutException:
+        pass        
 
     watchlist = mdb.watchlist
-    for item in watchlist_list:
-        resultw = watchlist.insert_one(item)
-        if resultw:
-            print(str(resultw.inserted_id))
-    
+    try:
+        for item in watchlist_list:
+            resultw = watchlist.insert_one(item)
+            if resultw:
+                print(str(resultw.inserted_id))
+    except Exception as e:
+        # print(str(e))
+        pass
+    except TimeoutException:
+        pass  
 
 
 # login(driver)
@@ -224,7 +236,7 @@ def write_mongo(total_values, watchlist_list):
 # read_page_html()
 scrape_totals()
 scrape_watchlist()
-# write_mongo(total_values, watchlist)
+write_mongo(total_values, watchlist)
 
 # close and quit driver
 driver.close()
