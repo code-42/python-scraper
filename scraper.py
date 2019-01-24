@@ -81,7 +81,7 @@ def login(driver):
         pass
 
 
-def get_page_html(driver):
+def save_page(driver):
     # open connection and grab the page
     elem = driver.find_element_by_xpath("//*")
     page_html = elem.get_attribute("outerHTML")
@@ -126,7 +126,7 @@ def scrape_totals():
         
         totals = the_soup.find_all('div', {'class': 'Mb(10px)'})
         print("len(totals): ", len(totals))
-        # print(len(totals))
+        print(len(totals))
         # print(totals)
         # totals = soup.find_all('div.Mb(10px)')
         # #main section header._3ljve div._2W3D9 div._3FlxF div div.OxrAq
@@ -136,15 +136,15 @@ def scrape_totals():
             # print("printing totals... ")
             # print(totals[2])
             # pattern0 captures the Total Value
-            pattern0 = re.search("[$](\d+[,?]\d+\.\d+)", totals[2].text)
+            pattern0 = re.search("[$](\d+[,?]\d+\.\d+)", totals[len(totals)-1].text)
             if pattern0: values.append(pattern0.group())
                 
             # pattern1 captures the Day Gain
-            pattern1 = re.search("([+|-]\d+\.\d+\s\([+|-]\d+\.\d+\%\))", totals[2].text)
+            pattern1 = re.search("([+|-]\d+\.\d+\s\([+|-]\d+\.\d+\%\))", totals[len(totals)-1].text)
             if pattern1: values.append(pattern1.group())
             
             # pattern2 captures the Total Gain
-            pattern2 = re.search("([+|-]\d+\,\d+\.\d+\s[\(][+]\d+.\d+\%\))", totals[2].text)
+            pattern2 = re.search("([+|-]\d+\,\d+\.\d+\s[\(][+]\d+.\d+\%\))", totals[len(totals)-1].text)
             if pattern2: values.append(pattern2.group())
     finally:
         # f.close()
@@ -219,7 +219,7 @@ def write_mongo(total_values, watchlist_list):
 
 
 # login(driver)
-# get_page_html(driver)
+# save_page(driver)
 # scrape_totals(page_html)
 # read_page_html()
 scrape_totals()
