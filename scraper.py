@@ -9,11 +9,15 @@ from selenium.webdriver.common.keys import Keys
 from datetime import datetime
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
+from collections import Counter
 import time
 import os
 import re
 
-driver = webdriver.Firefox()
+profile = webdriver.FirefoxProfile()
+profile.set_preference("general.useragent.override", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:64.0) Gecko/20100101 Firefox/64.0")
+driver = webdriver.Firefox(profile)
+# driver = webdriver.Firefox()
 wait = WebDriverWait(driver, 10) # seconds
 
 loginUrl = os.environ.get('YAHOO_LOGIN_URL')
@@ -29,6 +33,8 @@ print("timestamp == ", timeStamp)
 dt = datetime.now().strftime("%b %d, %Y @ %I:%M %p")
 print("dt == ", dt)
 
+# html returned from get_page()
+page_html = ""
 # dict to be inserted into mongodb
 total_values = {}
 # watchlist is a list of dicts
@@ -59,6 +65,7 @@ def login(driver):
         # elem = wait.until(EC.title_contains(driver.title))
         driver.get(watchlistUrl)
 
+        # elem = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/dialog/section/button')))
         elem = wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/dialog/section/button')))
         if(elem):
             print(elem)
@@ -82,9 +89,16 @@ def get_page_html(driver):
         f = open(filename, 'w', encoding='utf-8')
         f.write(page_html)
     finally:
+        # close the file watchlist.html - is done writing
         f.close()
+        # no longer need webdriver
+        driver.close()
+        driver.quit()
+        # print(page_html)
+        return page_html
 
 
+# def scrape_totals(page_html):
 def scrape_totals():
     keys = ['Market Time','Total Value','Day Gain','Total Gain'] 
     values = []
@@ -94,28 +108,42 @@ def scrape_totals():
         filename = "watchlist.html"
         with open(filename, 'r', encoding='utf-8') as f:
             contents = f.read()
+            # contents = page_html
             soup = BeautifulSoup(contents, 'lxml')
-            
+        
             totals = soup.find_all('div', {'class': 'Mb(10px)'})
-#             totals = soup.find('div.Mb(10px)')
-            for total in totals[1]:
+            print("len(totals): ", len(totals))
+            # print(len(totals))
+            # print(totals)
+            # totals = soup.find_all('div.Mb(10px)')
+            # #main section header._3ljve div._2W3D9 div._3FlxF div div.OxrAq
+            # main.Px\(20px\) > div:nth-child(2)
+            # totals = soup.find('/html/body/div[1]/div/div/div[1]/div/div[2]/div/div/div[3]/div/div/main/div[1]')
+            for total in totals:
+                # print("printing totals... ")
+                # print(totals[2])
                 # pattern0 captures the Total Value
-                pattern0 = re.search("[$](\d+[,?]\d+\.\d+)", total.text)
+                pattern0 = re.search("[$](\d+[,?]\d+\.\d+)", totals[2].text)
                 if pattern0: values.append(pattern0.group())
-                
+                    
                 # pattern1 captures the Day Gain
-                pattern1 = re.search("([+|-]\d+\.\d+\s\([+|-]\d+\.\d+\%\))", total.text)
+                pattern1 = re.search("([+|-]\d+\.\d+\s\([+|-]\d+\.\d+\%\))", totals[2].text)
                 if pattern1: values.append(pattern1.group())
                 
                 # pattern2 captures the Total Gain
-                pattern2 = re.search("([+|-]\d+\,\d+\.\d+\s[\(][+]\d+.\d+\%\))", total.text)
+                pattern2 = re.search("([+|-]\d+\,\d+\.\d+\s[\(][+]\d+.\d+\%\))", totals[2].text)
                 if pattern2: values.append(pattern2.group())
     finally:
         f.close()
+        driver.close()
+        driver.quit()
+        print("scraping fin.")
+        # print(values)
         for key, value in zip(keys, values):
             total_values[key] = value
 
-        return total_values
+    print(total_values)
+    return total_values
 
 
 def scrape_watchlist():
@@ -178,10 +206,11 @@ def write_mongo(total_values, watchlist_list):
 
 # login(driver)
 # get_page_html(driver)
-# scrape_totals()
+# scrape_totals(page_html)
+scrape_totals()
 # scrape_watchlist()
-write_mongo(total_values, watchlist)
+# write_mongo(total_values, watchlist)
 
 # close and quit driver
-driver.close()
-driver.quit()
+# driver.close()
+# driver.quit()
