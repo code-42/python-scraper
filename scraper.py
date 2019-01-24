@@ -14,6 +14,9 @@ import time
 import os
 import re
 
+start_time = datetime.now()
+
+
 profile = webdriver.FirefoxProfile()
 profile.set_preference("general.useragent.override", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:64.0) Gecko/20100101 Firefox/64.0")
 driver = webdriver.Firefox(profile)
@@ -82,7 +85,7 @@ def login(driver):
 
 
 def save_page(driver):
-    # open connection and grab the page
+    # save the page to disk for further processing
     elem = driver.find_element_by_xpath("//*")
     page_html = elem.get_attribute("outerHTML")
     try:
@@ -93,18 +96,20 @@ def save_page(driver):
         # close the file watchlist.html - is done writing
         f.close()
         # no longer need webdriver
-        driver.close()
-        driver.quit()
+        if driver:
+            driver.close()
+            driver.quit()
         # print(page_html)
         return page_html
 
+
+# read watchlist.html into a BeautifulSoup object
 def make_soup():
+    # reads html from disk
     filename = "watchlist.html"
     with open(filename, 'r', encoding='utf-8') as f:
         contents = f.read()
-        # contents = page_html
         soup = BeautifulSoup(contents, 'lxml')
-        print(type(soup))
         f.close()
         return soup
 
@@ -116,25 +121,11 @@ def scrape_totals():
     try:
         # first item in list is market time
         values.append(dt)
-        # filename = "watchlist.html"
-        # with open(filename, 'r', encoding='utf-8') as f:
-        #     contents = f.read()
-        #     # contents = page_html
-        #     soup = BeautifulSoup(contents, 'lxml')
-
         the_soup = make_soup()
-        
+        # print(the_soup)
         totals = the_soup.find_all('div', {'class': 'Mb(10px)'})
         print("len(totals): ", len(totals))
-        print(len(totals))
-        # print(totals)
-        # totals = soup.find_all('div.Mb(10px)')
-        # #main section header._3ljve div._2W3D9 div._3FlxF div div.OxrAq
-        # main.Px\(20px\) > div:nth-child(2)
-        # totals = soup.find('/html/body/div[1]/div/div/div[1]/div/div[2]/div/div/div[3]/div/div/main/div[1]')
         for total in totals:
-            # print("printing totals... ")
-            # print(totals[2])
             # pattern0 captures the Total Value
             pattern0 = re.search("[$](\d+[,?]\d+\.\d+)", totals[len(totals)-1].text)
             if pattern0: values.append(pattern0.group())
@@ -147,10 +138,6 @@ def scrape_totals():
             pattern2 = re.search("([+|-]\d+\,\d+\.\d+\s[\(][+]\d+.\d+\%\))", totals[len(totals)-1].text)
             if pattern2: values.append(pattern2.group())
     finally:
-        # f.close()
-
-        print("scraping fin.")
-        # print(values)
         for key, value in zip(keys, values):
             total_values[key] = value
 
@@ -175,16 +162,11 @@ def scrape_watchlist():
             ]
     values = []
     watchlist_item = {}
-    # watchlist = []
 
     filename = "watchlist.html"
-    # with open(filename, 'r', encoding='utf-8') as f:
-    #     contents = f.read()
-    #     soup = BeautifulSoup(contents, 'lxml')
     the_soup = make_soup()
     table = the_soup.table
     try:
-        # tr = table.find_all('tr')
         for tr in table.find_all('tr'):
             td = tr.find_all('td')
             if len(td) > 0:
@@ -197,18 +179,17 @@ def scrape_watchlist():
 
                 watchlist.append(watchlist_item.copy())
     finally:
-        # f.close()
         print(watchlist)
         return watchlist
 
 
-def write_mongo(total_values_list, watchlist_list):
+def write_mongo(total_values_dict, watchlist_list):
     client = MongoClient(mongo_uri)
     mdb = client[mongo_dbname]
     
     totals = mdb.totals
     try:
-        result = totals.insert_one(total_values_list)
+        result = totals.insert_one(total_values_dict)
         if result:
             print(str(result.inserted_id))
     except Exception as e:
@@ -230,14 +211,27 @@ def write_mongo(total_values_list, watchlist_list):
         pass  
 
 
-# login(driver)
-# save_page(driver)
-# scrape_totals(page_html)
-# read_page_html()
+# login to yahoo and save a handle to webdriver
+login(driver)
+
+# save the watchlist page to disk for further processing
+save_page(driver)
+
+# read watchlist.html and save data to list
 scrape_totals()
+
+# read watchlist.html and save data to list
 scrape_watchlist()
+
+# save data to mLab.com mongoDB
 write_mongo(total_values, watchlist)
 
-# close and quit driver
-driver.close()
-driver.quit()
+try:
+    if driver:
+        driver.close()
+        driver.quit()
+except:
+    pass
+
+print(datetime.now() - start_time)
+
